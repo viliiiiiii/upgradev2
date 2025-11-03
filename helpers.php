@@ -26,8 +26,20 @@ if (!defined('HELPERS_BOOTSTRAPPED')) {
      * or the core governance DB ("core" = users/roles/activity).
      */
     function get_pdo(string $which = 'apps'): PDO {
-        static $pool = [];
-        if (isset($pool[$which])) return $pool[$which];
+        static $pool     = [];
+        static $failures = [];
+
+        if (isset($pool[$which])) {
+            return $pool[$which];
+        }
+
+        if (isset($failures[$which])) {
+            if ($which === 'apps') {
+                throw new RuntimeException('Database connection previously failed.');
+            }
+
+            return $pool[$which] = get_pdo('apps');
+        }
 
         if ($which === 'core') {
             $dsn  = CORE_DSN;
@@ -39,13 +51,36 @@ if (!defined('HELPERS_BOOTSTRAPPED')) {
             $pass = APPS_DB_PASS;
         }
 
-        $pdo = new PDO($dsn, $user, $pass, [
+        $options = [
             PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
             PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
             PDO::ATTR_EMULATE_PREPARES   => false,
-        ]);
-        $pool[$which] = $pdo;
-        return $pdo;
+        ];
+
+        if (defined('PDO::ATTR_TIMEOUT')) {
+            $options[PDO::ATTR_TIMEOUT] = 2;
+        }
+
+        try {
+            $pdo = new PDO($dsn, $user, $pass, $options);
+            return $pool[$which] = $pdo;
+        } catch (Throwable $e) {
+            $failures[$which] = $e;
+
+            if ($which !== 'apps') {
+                try {
+                    error_log('get_pdo failed for ' . $which . ': ' . $e->getMessage());
+                } catch (Throwable $_) {}
+
+                return $pool[$which] = get_pdo('apps');
+            }
+
+            if ($e instanceof RuntimeException) {
+                throw $e;
+            }
+
+            throw new RuntimeException('Unable to connect to database: ' . $e->getMessage(), 0, $e);
+        }
     }
     if (!defined('NOTIF_DB_KEY')) define('NOTIF_DB_KEY','core');
 
@@ -597,6 +632,11 @@ if (!defined('HELPERS_BOOTSTRAPPED')) {
      * Returns role/sector slugs if available.
      */
     function core_find_user_by_email(string $email): ?array {
+        $email = trim($email);
+        if ($email === '') {
+            return null;
+        }
+
         try {
             $pdo = get_pdo('core');
             $sql = "SELECT u.*,
@@ -610,10 +650,32 @@ if (!defined('HELPERS_BOOTSTRAPPED')) {
             $st = $pdo->prepare($sql);
             $st->execute([$email]);
             $u = $st->fetch();
-            return $u ?: null;
+            if ($u) {
+                return $u;
+            }
         } catch (Throwable $e) {
-            return null;
+            // fall through to local lookup
         }
+
+        try {
+            $apps = get_pdo();
+            $st   = $apps->prepare('SELECT * FROM users WHERE email = ? LIMIT 1');
+            $st->execute([$email]);
+            $row = $st->fetch(PDO::FETCH_ASSOC);
+            if ($row) {
+                if (!isset($row['role_slug']) && isset($row['role'])) {
+                    $row['role_slug'] = $row['role'];
+                }
+                if (!isset($row['role_key']) && isset($row['role'])) {
+                    $row['role_key'] = $row['role'];
+                }
+                return $row;
+            }
+        } catch (Throwable $inner) {
+            // ignore and return null below
+        }
+
+        return null;
     }
 
     /**
@@ -629,6 +691,7 @@ if (!defined('HELPERS_BOOTSTRAPPED')) {
         if (array_key_exists($userId, $cache)) {
             return $cache[$userId];
         }
+
         try {
             $stmt = get_pdo('core')->prepare('SELECT u.*, r.key_slug AS role_key FROM users u JOIN roles r ON r.id = u.role_id WHERE u.id = ?');
             $stmt->execute([$userId]);
@@ -638,9 +701,27 @@ if (!defined('HELPERS_BOOTSTRAPPED')) {
                 return $row;
             }
         } catch (Throwable $e) {
-            $cache[$userId] = null;
+            // ignore and attempt local fallback
         }
-        return $cache[$userId] ?? null;
+
+        try {
+            $apps = get_pdo();
+            $stmt = $apps->prepare('SELECT * FROM users WHERE id = ? LIMIT 1');
+            $stmt->execute([$userId]);
+            $row = $stmt->fetch(PDO::FETCH_ASSOC);
+            if ($row) {
+                if (!isset($row['role_key']) && isset($row['role'])) {
+                    $row['role_key'] = $row['role'];
+                }
+                $cache[$userId] = $row;
+                return $row;
+            }
+        } catch (Throwable $inner) {
+            // ignore failure
+        }
+
+        $cache[$userId] = null;
+        return null;
     }
 
     function current_user_role_key(): string {
@@ -905,8 +986,22 @@ function resolve_notification_user_id($value): ?int {
     // Direct numeric ID
     if (ctype_digit($candidate)) {
         $id = (int)$candidate;
-        if ($id > 0 && core_user_record($id)) {
-            return $id;
+        if ($id > 0) {
+            try {
+                $apps = get_pdo();
+                $check = $apps->prepare('SELECT id FROM users WHERE id = :id LIMIT 1');
+                $check->execute([':id' => $id]);
+                if ($check->fetchColumn()) {
+                    return $id;
+                }
+            } catch (Throwable $e) {
+                // ignore local lookup failure
+            }
+
+            $record = core_user_record($id);
+            if ($record && !empty($record['id'])) {
+                return (int)$record['id'];
+            }
         }
     }
 
@@ -914,6 +1009,18 @@ function resolve_notification_user_id($value): ?int {
         $user = core_find_user_by_email($candidate);
         if ($user && !empty($user['id'])) {
             return (int)$user['id'];
+        }
+
+        try {
+            $apps = get_pdo();
+            $stmt = $apps->prepare('SELECT id FROM users WHERE email = :email LIMIT 1');
+            $stmt->execute([':email' => $candidate]);
+            $localId = $stmt->fetchColumn();
+            if ($localId) {
+                return (int)$localId;
+            }
+        } catch (Throwable $e) {
+            // ignore final failure
         }
     }
 
