@@ -45,6 +45,12 @@ while (true) {
   $cnt = notif_unread_count($userId);
 
   if ($cnt !== $last) {
+    if ($cnt > $last) {
+      $recent = notif_recent_unread($userId, min(5, $cnt));
+      if ($recent) {
+        sse_send('notifications', ['items' => $recent], (string)time());
+      }
+    }
     $last = $cnt;
     sse_send('count', ['count' => $cnt], (string)time());
   } else {

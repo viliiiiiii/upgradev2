@@ -228,7 +228,13 @@ include __DIR__ . '/includes/header.php';
     <?php endif; ?>
     <form method="post" enctype="multipart/form-data" class="grid two">
         <label>Building
-            <select name="building_id" id="building_id" required>
+            <select
+              name="building_id"
+              id="building_id"
+              required
+              data-room-source
+              data-room-input="room_number"
+              data-room-datalist="room-suggestions">
                 <option value="">Select building…</option>
                 <?php foreach ($buildings as $b): ?>
                     <option value="<?php echo (int)$b['id']; ?>"><?php echo sanitize($b['name']); ?></option>
@@ -243,8 +249,11 @@ include __DIR__ . '/includes/header.php';
               inputmode="numeric"
               pattern="[0-9A-Za-z\- ]+"
               placeholder="e.g. 101"
+              list="room-suggestions"
               required
             >
+            <datalist id="room-suggestions"></datalist>
+            <small class="muted">Suggestions populate after you pick a building.</small>
         </label>
 
         <label>Title

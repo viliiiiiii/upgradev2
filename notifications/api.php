@@ -22,12 +22,32 @@ if (($_GET['action'] ?? '') === 'connect') {
     if (!function_exists('notif_touch_web_device')) {
         function notif_touch_web_device(int $userId, string $userAgent): void {
             $pdo = notif_pdo();
-            $sql = "INSERT INTO notification_devices (user_id, kind, user_agent, created_at, last_used_at)
-                    VALUES (:u, 'web', :ua, NOW(), NOW())
-                    ON DUPLICATE KEY UPDATE last_used_at = NOW(), user_agent = VALUES(user_agent)";
+            $ua   = substr($userAgent, 0, 255);
+
+            $sessionId = session_id();
+            if ($sessionId === '' || $sessionId === false) {
+                $sessionId = $_COOKIE['PHPSESSID'] ?? bin2hex(random_bytes(8));
+            }
+
+            $fingerprint = implode('|', [
+                (string)$userId,
+                (string)$sessionId,
+                substr((string)($_SERVER['REMOTE_ADDR'] ?? ''), 0, 45),
+                $ua,
+            ]);
+            $endpoint = 'internal-webpush://' . sha1($fingerprint);
+
+            $sql = "INSERT INTO notification_devices (user_id, kind, endpoint, user_agent, created_at, last_used_at)"
+                 . " VALUES (:u, 'webpush', :ep, :ua, NOW(), NOW())"
+                 . " ON DUPLICATE KEY UPDATE last_used_at = NOW(), user_agent = VALUES(user_agent), endpoint = VALUES(endpoint)";
+
             try {
-                $pdo->prepare($sql)->execute([':u' => $userId, ':ua' => substr((string)($_SERVER['HTTP_USER_AGENT'] ?? ''), 0, 255)]);
-            } catch (Throwable $e) {}
+                $pdo->prepare($sql)->execute([':u' => $userId, ':ep' => $endpoint, ':ua' => $ua]);
+            } catch (Throwable $e) {
+                try {
+                    error_log('notif_touch_web_device failed: ' . $e->getMessage());
+                } catch (Throwable $_) {}
+            }
         }
     }
     notif_touch_web_device($userId, (string)($_SERVER['HTTP_USER_AGENT'] ?? ''));
