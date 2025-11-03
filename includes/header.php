@@ -125,77 +125,88 @@ $breadcrumbs = build_breadcrumbs($path);
 <header class="navbar">
   <div class="navbar__inner container">
     <a href="/index.php" class="brand" aria-label="<?php echo bc_s(APP_TITLE); ?>">
-      <img src="/assets/logo.png" alt="" class="brand__logo">
-      <span class="brand__title"><?php echo bc_s(APP_TITLE); ?></span>
+      <span class="brand__spark" aria-hidden="true"></span>
+      <span class="brand__mark">
+        <img src="/assets/logo.png" alt="" class="brand__logo">
+      </span>
+      <span class="brand__text">
+        <span class="brand__title"><?php echo bc_s(APP_TITLE); ?></span>
+        <span class="brand__subtitle">Field Ops Hub</span>
+      </span>
     </a>
 
     <!-- Mobile toggle -->
     <button id="navToggle" class="nav-toggle" aria-label="Open menu" aria-expanded="false" aria-controls="navPanel">
-      <span class="bar"></span><span class="bar"></span><span class="bar"></span>
+      <span class="nav-toggle__icon" aria-hidden="true">
+        <span class="nav-toggle__line"></span>
+        <span class="nav-toggle__line"></span>
+        <span class="nav-toggle__line"></span>
+      </span>
+      <span class="nav-toggle__label">Menu</span>
     </button>
 
     <!-- Collapsible panel -->
-    <div id="navPanel" class="nav-panel">
-      <nav aria-label="Main">
+    <div id="navPanel" class="nav-panel" data-role="nav-panel">
+      <nav class="nav-panel__primary" aria-label="Main">
         <ul class="nav">
           <li>
             <a class="nav__link<?= ($path === '/' || $path === '/index.php') ? ' is-active' : '' ?>"
                <?= ($path === '/' || $path === '/index.php') ? 'aria-current="page"' : '' ?>
-               href="/index.php">Dashboard</a>
+               href="/index.php"><span class="nav__label">Dashboard</span></a>
           </li>
 
           <li>
-            <a class="nav__link<?= preg_match('#^/(tasks\.php|task_)#', $path) ? ' is-active' : '' ?>"
-               <?= preg_match('#^/(tasks\.php|task_)#', $path) ? 'aria-current="page"' : '' ?>
-               href="/tasks.php">Tasks</a>
+            <a class="nav__link<?= preg_match('#^/(tasks\\.php|task_)#', $path) ? ' is-active' : '' ?>"
+               <?= preg_match('#^/(tasks\\.php|task_)#', $path) ? 'aria-current="page"' : '' ?>
+               href="/tasks.php"><span class="nav__label">Tasks</span></a>
           </li>
 
           <li>
-            <a class="nav__link<?= preg_match('#^/rooms(\.php|/|$)#', $path) ? ' is-active' : '' ?>"
-               <?= preg_match('#^/rooms(\.php|/|$)#', $path) ? 'aria-current="page"' : '' ?>
-               href="/rooms.php">Rooms</a>
+            <a class="nav__link<?= preg_match('#^/rooms(\\.php|/|$)#', $path) ? ' is-active' : '' ?>"
+               <?= preg_match('#^/rooms(\\.php|/|$)#', $path) ? 'aria-current="page"' : '' ?>
+               href="/rooms.php"><span class="nav__label">Rooms</span></a>
           </li>
 
           <li>
-            <a class="nav__link<?= preg_match('#^/inventory(\.php|/|$)#', $path) ? ' is-active' : '' ?>"
-               <?= preg_match('#^/inventory(\.php|/|$)#', $path) ? 'aria-current="page"' : '' ?>
-               href="/inventory.php">Inventory</a>
+            <a class="nav__link<?= preg_match('#^/inventory(\\.php|/|$)#', $path) ? ' is-active' : '' ?>"
+               <?= preg_match('#^/inventory(\\.php|/|$)#', $path) ? 'aria-current="page"' : '' ?>
+               href="/inventory.php"><span class="nav__label">Inventory</span></a>
           </li>
 
           <li>
             <a class="nav__link<?= preg_match('#^/notes(/|$)#', $path) ? ' is-active' : '' ?>"
                <?= preg_match('#^/notes(/|$)#', $path) ? 'aria-current="page"' : '' ?>
-               href="/notes/index.php">Notes</a>
+               href="/notes/index.php"><span class="nav__label">Notes</span></a>
           </li>
           <?php if ($roleKey === 'root'): ?>
             <li class="nav__sep" aria-hidden="true"></li>
 
             <li>
-              <a class="nav__link<?= preg_match('#^/admin/users(\.php|/|$)#', $path) ? ' is-active' : '' ?>"
-                 <?= preg_match('#^/admin/users(\.php|/|$)#', $path) ? 'aria-current="page"' : '' ?>
-                 href="/admin/users.php">Users</a>
+              <a class="nav__link<?= preg_match('#^/admin/users(\\.php|/|$)#', $path) ? ' is-active' : '' ?>"
+                 <?= preg_match('#^/admin/users(\\.php|/|$)#', $path) ? 'aria-current="page"' : '' ?>
+                 href="/admin/users.php"><span class="nav__label">Users</span></a>
             </li>
 
             <li>
-              <a class="nav__link<?= preg_match('#^/admin/sectors(\.php|/|$)#', $path) ? ' is-active' : '' ?>"
-                 <?= preg_match('#^/admin/sectors(\.php|/|$)#', $path) ? 'aria-current="page"' : '' ?>
-                 href="/admin/sectors.php">Sectors</a>
+              <a class="nav__link<?= preg_match('#^/admin/sectors(\\.php|/|$)#', $path) ? ' is-active' : '' ?>"
+                 <?= preg_match('#^/admin/sectors(\\.php|/|$)#', $path) ? 'aria-current="page"' : '' ?>
+                 href="/admin/sectors.php"><span class="nav__label">Sectors</span></a>
             </li>
 
             <li>
-              <a class="nav__link<?= preg_match('#^/admin/activity(\.php|/|$)#', $path) ? ' is-active' : '' ?>"
-                 <?= preg_match('#^/admin/activity(\.php|/|$)#', $path) ? 'aria-current="page"' : '' ?>
-                 href="/admin/activity.php">Activity</a>
+              <a class="nav__link<?= preg_match('#^/admin/activity(\\.php|/|$)#', $path) ? ' is-active' : '' ?>"
+                 <?= preg_match('#^/admin/activity(\\.php|/|$)#', $path) ? 'aria-current="page"' : '' ?>
+                 href="/admin/activity.php"><span class="nav__label">Activity</span></a>
             </li>
           <?php endif; ?>
         </ul>
       </nav>
 
-      <div class="nav-user">
-            <a class="nav__link" href="/notifications/index.php" style="position:relative">
-  🔔
-  <span id="notifDot" style="display:none;position:absolute;top:-2px;right:-6px;background:#ef4444;color:#fff;border-radius:999px;padding:2px 6px;font-size:10px;font-weight:700;"></span>
-</a>
+      <div class="nav-panel__actions">
+        <a class="nav__bell" href="/notifications/index.php" aria-label="Open notifications">
+          <span class="nav__bell-icon" aria-hidden="true">🔔</span>
+          <span id="notifDot" class="nav__bell-dot" aria-hidden="true"></span>
+        </a>
 
         <?php if ($me): ?>
           <a class="nav-user__email nav-user__profile-link"
@@ -216,21 +227,100 @@ $breadcrumbs = build_breadcrumbs($path);
 document.addEventListener('DOMContentLoaded', () => {
   const btn = document.getElementById('navToggle');
   const panel = document.getElementById('navPanel');
+  const body = document.body;
   if (!btn || !panel) return;
-  btn.addEventListener('click', () => {
-    const open = panel.classList.toggle('open');
-    btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+
+  const mq = window.matchMedia('(min-width: 980px)');
+  const isDesktop = () => mq.matches;
+
+  const syncAria = () => {
+    if (isDesktop()) {
+      panel.removeAttribute('aria-hidden');
+      body.classList.remove('nav-open');
+    } else {
+      panel.setAttribute('aria-hidden', panel.classList.contains('open') ? 'false' : 'true');
+    }
+  };
+
+  const openPanel = () => {
+    panel.classList.add('open');
+    btn.classList.add('is-active');
+    btn.setAttribute('aria-expanded', 'true');
+    if (!isDesktop()) {
+      panel.setAttribute('aria-hidden', 'false');
+      body.classList.add('nav-open');
+    }
+  };
+
+  const closePanel = () => {
+    panel.classList.remove('open');
+    btn.classList.remove('is-active');
+    btn.setAttribute('aria-expanded', 'false');
+    if (!isDesktop()) {
+      panel.setAttribute('aria-hidden', 'true');
+    }
+    body.classList.remove('nav-open');
+  };
+
+  btn.addEventListener('click', (event) => {
+    event.stopPropagation();
+    if (panel.classList.contains('open')) {
+      closePanel();
+    } else {
+      openPanel();
+    }
   });
+
+  document.addEventListener('click', (event) => {
+    if (!panel.classList.contains('open')) return;
+    if (panel.contains(event.target) || btn.contains(event.target)) return;
+    closePanel();
+  });
+
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && panel.classList.contains('open')) {
+      closePanel();
+    }
+  });
+
+  panel.addEventListener('click', (event) => {
+    if (isDesktop()) return;
+    const link = event.target.closest('a');
+    if (link) {
+      closePanel();
+    }
+  });
+
+  const handleMqChange = (event) => {
+    if (event.matches) {
+      closePanel();
+    }
+    syncAria();
+  };
+
+  if (mq.addEventListener) {
+    mq.addEventListener('change', handleMqChange);
+  } else if (mq.addListener) {
+    mq.addListener(handleMqChange);
+  }
+
+  syncAria();
 });
 </script>
 <script>
 document.addEventListener('DOMContentLoaded', () => {
   const dot = document.getElementById('notifDot');
 
-  function render(count){
-    if (count > 0) { dot.textContent = count; dot.style.display='inline-block'; }
-    else { dot.style.display='none'; }
-  }
+  const render = (count) => {
+    if (!dot) return;
+    if (count > 0) {
+      dot.textContent = count;
+      dot.classList.add('is-visible');
+    } else {
+      dot.textContent = '';
+      dot.classList.remove('is-visible');
+    }
+  };
 
   if ('EventSource' in window) {
     const es = new EventSource('/notifications/stream.php');
@@ -255,6 +345,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 });
 </script>
+
 
 <main class="container" id="app-main">
   <!-- Breadcrumbs -->
