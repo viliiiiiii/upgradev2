@@ -252,6 +252,25 @@ function notif_unread_count(int $userId): int {
     return (int)$st->fetchColumn();
 }
 
+function notif_recent_unread(int $userId, int $limit = 3): array {
+    $limit = max(1, (int)$limit);
+    $pdo = notif_pdo();
+    $st = $pdo->prepare("SELECT id, title, body, url, created_at FROM notifications WHERE user_id = :u AND is_read = 0 ORDER BY id DESC LIMIT :lim");
+    $st->bindValue(':u', $userId, PDO::PARAM_INT);
+    $st->bindValue(':lim', $limit, PDO::PARAM_INT);
+    $st->execute();
+    $rows = $st->fetchAll(PDO::FETCH_ASSOC) ?: [];
+    return array_map(static function ($row) {
+        return [
+            'id'         => (int)($row['id'] ?? 0),
+            'title'      => $row['title'] ?? '',
+            'body'       => $row['body'] ?? '',
+            'url'        => $row['url'] ?? null,
+            'created_at' => $row['created_at'] ?? null,
+        ];
+    }, $rows);
+}
+
 /** Paginated list */
 function notif_list(int $userId, int $limit = 20, int $offset = 0): array {
     $pdo = notif_pdo();

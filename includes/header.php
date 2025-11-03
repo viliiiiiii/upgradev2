@@ -99,9 +99,10 @@ $breadcrumbs = build_breadcrumbs($path);
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title><?php echo bc_s($title); ?> - <?php echo bc_s(APP_TITLE); ?></title>
-  <link rel="stylesheet" href="/assets/css/app.css?v=pro-1.0">
+  <link rel="stylesheet" href="/assets/css/app.css?v=pro-1.1">
   <link rel="icon" href="/assets/favicon.ico">
   <meta name="theme-color" content="#f6f9ff">
+  <script type="module" src="/assets/js/app.js?v=pro-1.1" defer></script>
   <style>
     /* Lightweight breadcrumb styling (move to app.css later if you want) */
     .breadcrumbs { margin: 10px 0 14px; font-size: 13px; color: #475569; }
@@ -121,7 +122,9 @@ $breadcrumbs = build_breadcrumbs($path);
     }
   </style>
 </head>
-<body>
+<body
+  data-notif-stream="/notifications/stream.php"
+  data-notif-poll="/notifications/api.php?action=unread_count">
 <header class="navbar">
   <div class="navbar__inner container">
     <a href="/index.php" class="brand" aria-label="<?php echo bc_s(APP_TITLE); ?>">
@@ -208,6 +211,12 @@ $breadcrumbs = build_breadcrumbs($path);
           <span id="notifDot" class="nav__bell-dot" aria-hidden="true"></span>
         </a>
 
+        <button type="button" class="nav__command" data-command-open>
+          <span class="nav__command-icon" aria-hidden="true">⌘</span>
+          <span class="nav__command-label">Quick Find</span>
+          <span class="nav__command-hint">Ctrl&nbsp;+&nbsp;K</span>
+        </button>
+
         <?php if ($me): ?>
           <a class="nav-user__email nav-user__profile-link"
              href="/account/profile.php"
@@ -223,128 +232,26 @@ $breadcrumbs = build_breadcrumbs($path);
   </div>
 </header>
 
-<script>
-document.addEventListener('DOMContentLoaded', () => {
-  const btn = document.getElementById('navToggle');
-  const panel = document.getElementById('navPanel');
-  const body = document.body;
-  if (!btn || !panel) return;
+<div id="commandPalette" class="command-palette" hidden aria-hidden="true">
+  <div class="command-palette__backdrop" data-command-close></div>
+  <div class="command-palette__panel" role="dialog" aria-modal="true" aria-labelledby="commandPaletteLabel">
+    <div class="command-palette__search">
+      <label id="commandPaletteLabel" class="sr-only" for="commandPaletteInput">Quick find</label>
+      <input id="commandPaletteInput" type="search" name="command" autocomplete="off" placeholder="Search destinations or type #ID to open a task">
+      <div class="command-palette__shortcut" aria-hidden="true">
+        <kbd>Ctrl</kbd>
+        <span>+</span>
+        <kbd>K</kbd>
+      </div>
+    </div>
+    <ul id="commandPaletteResults" class="command-palette__results" role="listbox"></ul>
+    <footer class="command-palette__hint">
+      <p>Use ↑↓ to navigate, Enter to open. Try typing <strong>#42</strong> to jump to a task.</p>
+    </footer>
+  </div>
+</div>
 
-  const mq = window.matchMedia('(min-width: 980px)');
-  const isDesktop = () => mq.matches;
-
-  const syncAria = () => {
-    if (isDesktop()) {
-      panel.removeAttribute('aria-hidden');
-      body.classList.remove('nav-open');
-    } else {
-      panel.setAttribute('aria-hidden', panel.classList.contains('open') ? 'false' : 'true');
-    }
-  };
-
-  const openPanel = () => {
-    panel.classList.add('open');
-    btn.classList.add('is-active');
-    btn.setAttribute('aria-expanded', 'true');
-    if (!isDesktop()) {
-      panel.setAttribute('aria-hidden', 'false');
-      body.classList.add('nav-open');
-    }
-  };
-
-  const closePanel = () => {
-    panel.classList.remove('open');
-    btn.classList.remove('is-active');
-    btn.setAttribute('aria-expanded', 'false');
-    if (!isDesktop()) {
-      panel.setAttribute('aria-hidden', 'true');
-    }
-    body.classList.remove('nav-open');
-  };
-
-  btn.addEventListener('click', (event) => {
-    event.stopPropagation();
-    if (panel.classList.contains('open')) {
-      closePanel();
-    } else {
-      openPanel();
-    }
-  });
-
-  document.addEventListener('click', (event) => {
-    if (!panel.classList.contains('open')) return;
-    if (panel.contains(event.target) || btn.contains(event.target)) return;
-    closePanel();
-  });
-
-  document.addEventListener('keydown', (event) => {
-    if (event.key === 'Escape' && panel.classList.contains('open')) {
-      closePanel();
-    }
-  });
-
-  panel.addEventListener('click', (event) => {
-    if (isDesktop()) return;
-    const link = event.target.closest('a');
-    if (link) {
-      closePanel();
-    }
-  });
-
-  const handleMqChange = (event) => {
-    if (event.matches) {
-      closePanel();
-    }
-    syncAria();
-  };
-
-  if (mq.addEventListener) {
-    mq.addEventListener('change', handleMqChange);
-  } else if (mq.addListener) {
-    mq.addListener(handleMqChange);
-  }
-
-  syncAria();
-});
-</script>
-<script>
-document.addEventListener('DOMContentLoaded', () => {
-  const dot = document.getElementById('notifDot');
-
-  const render = (count) => {
-    if (!dot) return;
-    if (count > 0) {
-      dot.textContent = count;
-      dot.classList.add('is-visible');
-    } else {
-      dot.textContent = '';
-      dot.classList.remove('is-visible');
-    }
-  };
-
-  if ('EventSource' in window) {
-    const es = new EventSource('/notifications/stream.php');
-    es.addEventListener('count', (e) => {
-      try {
-        const data = JSON.parse(e.data || '{}');
-        render(Number(data.count || 0));
-      } catch (_) {}
-    });
-    es.onerror = () => { /* browser auto-reconnects; no action needed */ };
-  } else {
-    // Fallback: very light 30s polling if SSE not supported
-    async function poll(){
-      try {
-        const r = await fetch('/notifications/api.php?action=unread_count',{credentials:'same-origin'});
-        const j = await r.json();
-        if (j && j.ok) render(Number(j.count || 0));
-      } catch(_){}
-      setTimeout(poll, 30000);
-    }
-    poll();
-  }
-});
-</script>
+<div id="toastStack" class="toast-stack" aria-live="polite" aria-atomic="false"></div>
 
 
 <main class="container" id="app-main">
