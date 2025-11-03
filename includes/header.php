@@ -99,9 +99,10 @@ $breadcrumbs = build_breadcrumbs($path);
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title><?php echo bc_s($title); ?> - <?php echo bc_s(APP_TITLE); ?></title>
-  <link rel="stylesheet" href="/assets/css/app.css?v=pro-1.0">
+  <link rel="stylesheet" href="/assets/css/app.css?v=pro-1.1">
   <link rel="icon" href="/assets/favicon.ico">
   <meta name="theme-color" content="#f6f9ff">
+  <script type="module" src="/assets/js/app.js?v=pro-1.1" defer></script>
   <style>
     /* Lightweight breadcrumb styling (move to app.css later if you want) */
     .breadcrumbs { margin: 10px 0 14px; font-size: 13px; color: #475569; }
@@ -121,81 +122,100 @@ $breadcrumbs = build_breadcrumbs($path);
     }
   </style>
 </head>
-<body>
+<body
+  data-notif-stream="/notifications/stream.php"
+  data-notif-poll="/notifications/api.php?action=unread_count">
 <header class="navbar">
   <div class="navbar__inner container">
     <a href="/index.php" class="brand" aria-label="<?php echo bc_s(APP_TITLE); ?>">
-      <img src="/assets/logo.png" alt="" class="brand__logo">
-      <span class="brand__title"><?php echo bc_s(APP_TITLE); ?></span>
+      <span class="brand__spark" aria-hidden="true"></span>
+      <span class="brand__mark">
+        <img src="/assets/logo.png" alt="" class="brand__logo">
+      </span>
+      <span class="brand__text">
+        <span class="brand__title"><?php echo bc_s(APP_TITLE); ?></span>
+        <span class="brand__subtitle">Field Ops Hub</span>
+      </span>
     </a>
 
     <!-- Mobile toggle -->
     <button id="navToggle" class="nav-toggle" aria-label="Open menu" aria-expanded="false" aria-controls="navPanel">
-      <span class="bar"></span><span class="bar"></span><span class="bar"></span>
+      <span class="nav-toggle__icon" aria-hidden="true">
+        <span class="nav-toggle__line"></span>
+        <span class="nav-toggle__line"></span>
+        <span class="nav-toggle__line"></span>
+      </span>
+      <span class="nav-toggle__label">Menu</span>
     </button>
 
     <!-- Collapsible panel -->
-    <div id="navPanel" class="nav-panel">
-      <nav aria-label="Main">
+    <div id="navPanel" class="nav-panel" data-role="nav-panel">
+      <nav class="nav-panel__primary" aria-label="Main">
         <ul class="nav">
           <li>
             <a class="nav__link<?= ($path === '/' || $path === '/index.php') ? ' is-active' : '' ?>"
                <?= ($path === '/' || $path === '/index.php') ? 'aria-current="page"' : '' ?>
-               href="/index.php">Dashboard</a>
+               href="/index.php"><span class="nav__label">Dashboard</span></a>
           </li>
 
           <li>
-            <a class="nav__link<?= preg_match('#^/(tasks\.php|task_)#', $path) ? ' is-active' : '' ?>"
-               <?= preg_match('#^/(tasks\.php|task_)#', $path) ? 'aria-current="page"' : '' ?>
-               href="/tasks.php">Tasks</a>
+            <a class="nav__link<?= preg_match('#^/(tasks\\.php|task_)#', $path) ? ' is-active' : '' ?>"
+               <?= preg_match('#^/(tasks\\.php|task_)#', $path) ? 'aria-current="page"' : '' ?>
+               href="/tasks.php"><span class="nav__label">Tasks</span></a>
           </li>
 
           <li>
-            <a class="nav__link<?= preg_match('#^/rooms(\.php|/|$)#', $path) ? ' is-active' : '' ?>"
-               <?= preg_match('#^/rooms(\.php|/|$)#', $path) ? 'aria-current="page"' : '' ?>
-               href="/rooms.php">Rooms</a>
+            <a class="nav__link<?= preg_match('#^/rooms(\\.php|/|$)#', $path) ? ' is-active' : '' ?>"
+               <?= preg_match('#^/rooms(\\.php|/|$)#', $path) ? 'aria-current="page"' : '' ?>
+               href="/rooms.php"><span class="nav__label">Rooms</span></a>
           </li>
 
           <li>
-            <a class="nav__link<?= preg_match('#^/inventory(\.php|/|$)#', $path) ? ' is-active' : '' ?>"
-               <?= preg_match('#^/inventory(\.php|/|$)#', $path) ? 'aria-current="page"' : '' ?>
-               href="/inventory.php">Inventory</a>
+            <a class="nav__link<?= preg_match('#^/inventory(\\.php|/|$)#', $path) ? ' is-active' : '' ?>"
+               <?= preg_match('#^/inventory(\\.php|/|$)#', $path) ? 'aria-current="page"' : '' ?>
+               href="/inventory.php"><span class="nav__label">Inventory</span></a>
           </li>
 
           <li>
             <a class="nav__link<?= preg_match('#^/notes(/|$)#', $path) ? ' is-active' : '' ?>"
                <?= preg_match('#^/notes(/|$)#', $path) ? 'aria-current="page"' : '' ?>
-               href="/notes/index.php">Notes</a>
+               href="/notes/index.php"><span class="nav__label">Notes</span></a>
           </li>
           <?php if ($roleKey === 'root'): ?>
             <li class="nav__sep" aria-hidden="true"></li>
 
             <li>
-              <a class="nav__link<?= preg_match('#^/admin/users(\.php|/|$)#', $path) ? ' is-active' : '' ?>"
-                 <?= preg_match('#^/admin/users(\.php|/|$)#', $path) ? 'aria-current="page"' : '' ?>
-                 href="/admin/users.php">Users</a>
+              <a class="nav__link<?= preg_match('#^/admin/users(\\.php|/|$)#', $path) ? ' is-active' : '' ?>"
+                 <?= preg_match('#^/admin/users(\\.php|/|$)#', $path) ? 'aria-current="page"' : '' ?>
+                 href="/admin/users.php"><span class="nav__label">Users</span></a>
             </li>
 
             <li>
-              <a class="nav__link<?= preg_match('#^/admin/sectors(\.php|/|$)#', $path) ? ' is-active' : '' ?>"
-                 <?= preg_match('#^/admin/sectors(\.php|/|$)#', $path) ? 'aria-current="page"' : '' ?>
-                 href="/admin/sectors.php">Sectors</a>
+              <a class="nav__link<?= preg_match('#^/admin/sectors(\\.php|/|$)#', $path) ? ' is-active' : '' ?>"
+                 <?= preg_match('#^/admin/sectors(\\.php|/|$)#', $path) ? 'aria-current="page"' : '' ?>
+                 href="/admin/sectors.php"><span class="nav__label">Sectors</span></a>
             </li>
 
             <li>
-              <a class="nav__link<?= preg_match('#^/admin/activity(\.php|/|$)#', $path) ? ' is-active' : '' ?>"
-                 <?= preg_match('#^/admin/activity(\.php|/|$)#', $path) ? 'aria-current="page"' : '' ?>
-                 href="/admin/activity.php">Activity</a>
+              <a class="nav__link<?= preg_match('#^/admin/activity(\\.php|/|$)#', $path) ? ' is-active' : '' ?>"
+                 <?= preg_match('#^/admin/activity(\\.php|/|$)#', $path) ? 'aria-current="page"' : '' ?>
+                 href="/admin/activity.php"><span class="nav__label">Activity</span></a>
             </li>
           <?php endif; ?>
         </ul>
       </nav>
 
-      <div class="nav-user">
-            <a class="nav__link" href="/notifications/index.php" style="position:relative">
-  🔔
-  <span id="notifDot" style="display:none;position:absolute;top:-2px;right:-6px;background:#ef4444;color:#fff;border-radius:999px;padding:2px 6px;font-size:10px;font-weight:700;"></span>
-</a>
+      <div class="nav-panel__actions">
+        <a class="nav__bell" href="/notifications/index.php" aria-label="Open notifications">
+          <span class="nav__bell-icon" aria-hidden="true">🔔</span>
+          <span id="notifDot" class="nav__bell-dot" aria-hidden="true"></span>
+        </a>
+
+        <button type="button" class="nav__command" data-command-open>
+          <span class="nav__command-icon" aria-hidden="true">⌘</span>
+          <span class="nav__command-label">Quick Find</span>
+          <span class="nav__command-hint">Ctrl&nbsp;+&nbsp;K</span>
+        </button>
 
         <?php if ($me): ?>
           <a class="nav-user__email nav-user__profile-link"
@@ -212,49 +232,26 @@ $breadcrumbs = build_breadcrumbs($path);
   </div>
 </header>
 
-<script>
-document.addEventListener('DOMContentLoaded', () => {
-  const btn = document.getElementById('navToggle');
-  const panel = document.getElementById('navPanel');
-  if (!btn || !panel) return;
-  btn.addEventListener('click', () => {
-    const open = panel.classList.toggle('open');
-    btn.setAttribute('aria-expanded', open ? 'true' : 'false');
-  });
-});
-</script>
-<script>
-document.addEventListener('DOMContentLoaded', () => {
-  const dot = document.getElementById('notifDot');
+<div id="commandPalette" class="command-palette" hidden aria-hidden="true">
+  <div class="command-palette__backdrop" data-command-close></div>
+  <div class="command-palette__panel" role="dialog" aria-modal="true" aria-labelledby="commandPaletteLabel">
+    <div class="command-palette__search">
+      <label id="commandPaletteLabel" class="sr-only" for="commandPaletteInput">Quick find</label>
+      <input id="commandPaletteInput" type="search" name="command" autocomplete="off" placeholder="Search destinations or type #ID to open a task">
+      <div class="command-palette__shortcut" aria-hidden="true">
+        <kbd>Ctrl</kbd>
+        <span>+</span>
+        <kbd>K</kbd>
+      </div>
+    </div>
+    <ul id="commandPaletteResults" class="command-palette__results" role="listbox"></ul>
+    <footer class="command-palette__hint">
+      <p>Use ↑↓ to navigate, Enter to open. Try typing <strong>#42</strong> to jump to a task.</p>
+    </footer>
+  </div>
+</div>
 
-  function render(count){
-    if (count > 0) { dot.textContent = count; dot.style.display='inline-block'; }
-    else { dot.style.display='none'; }
-  }
-
-  if ('EventSource' in window) {
-    const es = new EventSource('/notifications/stream.php');
-    es.addEventListener('count', (e) => {
-      try {
-        const data = JSON.parse(e.data || '{}');
-        render(Number(data.count || 0));
-      } catch (_) {}
-    });
-    es.onerror = () => { /* browser auto-reconnects; no action needed */ };
-  } else {
-    // Fallback: very light 30s polling if SSE not supported
-    async function poll(){
-      try {
-        const r = await fetch('/notifications/api.php?action=unread_count',{credentials:'same-origin'});
-        const j = await r.json();
-        if (j && j.ok) render(Number(j.count || 0));
-      } catch(_){}
-      setTimeout(poll, 30000);
-    }
-    poll();
-  }
-});
-</script>
+<div id="toastStack" class="toast-stack" aria-live="polite" aria-atomic="false"></div>
 
 <main class="container" id="app-main">
   <!-- Breadcrumbs -->

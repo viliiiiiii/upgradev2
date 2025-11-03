@@ -230,7 +230,7 @@ include __DIR__ . '/includes/header.php';
 
         <label class="field col-span-6">
           <span class="lbl">Room</span>
-          <select name="room_id" id="room-select" required>
+          <select name="room_id" id="room-select" required data-room-placeholder="Select room">
             <option value="">Select room</option>
             <?php foreach ($rooms as $room): ?>
               <option value="<?php echo $room['id']; ?>" <?php echo ($task['room_id'] == $room['id']) ? 'selected' : ''; ?>>

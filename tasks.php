@@ -67,7 +67,7 @@ include __DIR__ . '/includes/header.php';
     </label>
 
     <label>Room
-      <select name="room_id" id="filter-room">
+      <select name="room_id" id="filter-room" data-room-placeholder="All">
         <option value="">All</option>
         <?php foreach ($rooms as $room): ?>
           <option value="<?php echo $room['id']; ?>" <?php echo $filters['room_id'] == $room['id'] ? 'selected' : ''; ?>>

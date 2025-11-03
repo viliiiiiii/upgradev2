@@ -252,6 +252,25 @@ function notif_unread_count(int $userId): int {
     return (int)$st->fetchColumn();
 }
 
+function notif_recent_unread(int $userId, int $limit = 3): array {
+    $limit = max(1, (int)$limit);
+    $pdo = notif_pdo();
+    $st = $pdo->prepare("SELECT id, title, body, url, created_at FROM notifications WHERE user_id = :u AND is_read = 0 ORDER BY id DESC LIMIT :lim");
+    $st->bindValue(':u', $userId, PDO::PARAM_INT);
+    $st->bindValue(':lim', $limit, PDO::PARAM_INT);
+    $st->execute();
+    $rows = $st->fetchAll(PDO::FETCH_ASSOC) ?: [];
+    return array_map(static function ($row) {
+        return [
+            'id'         => (int)($row['id'] ?? 0),
+            'title'      => $row['title'] ?? '',
+            'body'       => $row['body'] ?? '',
+            'url'        => $row['url'] ?? null,
+            'created_at' => $row['created_at'] ?? null,
+        ];
+    }, $rows);
+}
+
 /** Paginated list */
 function notif_list(int $userId, int $limit = 20, int $offset = 0): array {
     $pdo = notif_pdo();
@@ -278,11 +297,33 @@ function notif_mark_all_read(int $userId): void {
 }
 function notif_touch_web_device(int $userId, string $userAgent): void {
     $pdo = notif_pdo();
-    // Ensure you have a unique key like (user_id, kind, user_agent)
+    $ua   = substr($userAgent, 0, 255);
+
+    $sessionId = session_id();
+    if ($sessionId === '' || $sessionId === false) {
+        $sessionId = $_COOKIE['PHPSESSID'] ?? bin2hex(random_bytes(8));
+    }
+
+    $fingerprint = implode('|', [
+        (string)$userId,
+        (string)$sessionId,
+        substr((string)($_SERVER['REMOTE_ADDR'] ?? ''), 0, 45),
+        $ua,
+    ]);
+    $endpoint = 'internal-webpush://' . sha1($fingerprint);
+
     $stmt = $pdo->prepare("
-        INSERT INTO notification_devices (user_id, kind, user_agent, created_at, last_used_at)
-        VALUES (:u, 'web', :ua, NOW(), NOW())
-        ON DUPLICATE KEY UPDATE last_used_at = NOW(), user_agent = VALUES(user_agent)
-    ");
-    try { $stmt->execute([':u' => $userId, ':ua' => substr($userAgent, 0, 255)]); } catch (Throwable $e) {}
+        INSERT INTO notification_devices (user_id, kind, endpoint, user_agent, created_at, last_used_at)
+        VALUES (:u, 'webpush', :ep, :ua, NOW(), NOW())
+        ON DUPLICATE KEY UPDATE last_used_at = NOW(), user_agent = VALUES(user_agent), endpoint = VALUES(endpoint)
+    "
+    );
+
+    try {
+        $stmt->execute([':u' => $userId, ':ep' => $endpoint, ':ua' => $ua]);
+    } catch (Throwable $e) {
+        try {
+            error_log('notif_touch_web_device failed: ' . $e->getMessage());
+        } catch (Throwable $_) {}
+    }
 }
