@@ -253,6 +253,7 @@ $breadcrumbs = build_breadcrumbs($path);
 
 <div id="toastStack" class="toast-stack" aria-live="polite" aria-atomic="false"></div>
 
+
 <main class="container" id="app-main">
   <!-- Breadcrumbs -->
   <?php if (!empty($breadcrumbs) && is_array($breadcrumbs)): ?>
